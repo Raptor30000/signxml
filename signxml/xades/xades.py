@@ -192,7 +192,7 @@ class XAdESSigner(XAdESProcessor, XMLSigner):
     def add_signing_certificate(self, signed_signature_properties, sig_root, signing_settings: SigningSettings):
         # TODO: check if we need to support SigningCertificate
         signing_cert_v2 = SubElement(
-            signed_signature_properties, xades_tag("SigningCertificateV2"), nsmap=self.namespaces
+            signed_signature_properties, xades_tag("SigningCertificate"), nsmap=self.namespaces
         )
         assert signing_settings.cert_chain is not None
         for cert in signing_settings.cert_chain:
@@ -208,10 +208,16 @@ class XAdESSigner(XAdESProcessor, XMLSigner):
             digest_value_node = SubElement(cert_digest, ds_tag("DigestValue"), nsmap=self.namespaces)
             digest_value_node.text = b64encode(cert_digest_bytes).decode()
 
-            # issuer_serial_number = loaded_cert.get_serial_number()
-            # issuer_serial_bytes = long_to_bytes(issuer_serial_number)
-            # issuer_serial_v2 = SubElement(cert_node, xades_tag("IssuerSerialV2"), nsmap=self.namespaces)
-            # issuer_serial_v2.text = b64encode(issuer_serial_bytes).decode()
+            issuer_serial_v2 = SubElement(cert_node, xades_tag("IssuerSerial"), nsmap=self.namespaces)
+
+            issuer_name = loaded_cert.issuer.rfc4514_string()
+            issuer_name_element = SubElement(issuer_serial_v2, 'X509IssuerName')
+            issuer_name_element.text = str(issuer_name)
+
+            issuer_serial_number = loaded_cert.serial_number
+
+            issuer_serial_number_element = SubElement(issuer_serial_v2, 'X509SerialNumber')
+            issuer_serial_number_element.text = str(issuer_serial_number)
 
     def add_signature_policy_identifier(self, signed_signature_properties, sig_root, signing_settings: SigningSettings):
         if self.signature_policy is not None:
